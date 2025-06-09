@@ -2,6 +2,10 @@
 
 This project contains an API testing framework using pytest.
 
+## Recommended Python Version
+
+It is recommended to use Python 3.8 or higher for this project.
+
 ## Setup
 
 1.  **Create a virtual environment:**
