@@ -33,6 +33,35 @@ To run the API tests, use the following command:
 pytest
 ```
 
+## Continuous Integration with Jenkins
+
+This repository includes a `Jenkinsfile` to enable Continuous Integration (CI) using Jenkins.
+The pipeline defined in this file will automate the testing process.
+
+### Pipeline Stages
+
+The Jenkins pipeline consists of the following stages:
+
+1.  **Checkout**: Clones the source code from the repository.
+2.  **Setup Python Environment**:
+    *   Checks for Python 3.
+    *   Creates a Python virtual environment (named `.venv`).
+    *   Upgrades `pip` within the virtual environment.
+3.  **Install Dependencies**: Installs the project dependencies listed in `requirements.txt` using `pip`.
+4.  **Run Tests**: Executes the automated tests using `pytest`.
+
+### Usage
+
+1.  **Configure Jenkins**:
+    *   Ensure your Jenkins instance has the necessary plugins installed (e.g., Pipeline, Git).
+    *   Create a new Jenkins job (e.g., "Pipeline" or "Multibranch Pipeline").
+    *   Configure the job to use "Pipeline script from SCM".
+    *   Point the SCM to this repository.
+    *   The "Script Path" should be `Jenkinsfile` (which is the default).
+2.  **Run the Pipeline**: Trigger the Jenkins job manually or configure it to run on SCM changes (e.g., new commits).
+
+The pipeline will then execute the defined stages, providing feedback on the build and test results.
+
 ## Adding New Tests
 
 1.  Open the `tests/test_api.py` file.
