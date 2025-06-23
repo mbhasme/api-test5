@@ -1,104 +1,116 @@
-# API Testing Framework
+# Python Weather Service for api.weather.gov
 
-This project contains an API testing framework using pytest.
+This is a simple Python web service built with Flask that fetches weather forecast data from the U.S. National Weather Service API (`api.weather.gov`).
 
-## Recommended Python Version
+## Features
 
-It is recommended to use Python 3.8 or higher for this project.
+-   Accepts latitude and longitude as input.
+-   Queries `api.weather.gov` to get the relevant forecast grid.
+-   Fetches the latest forecast for the specified location.
+-   Returns a JSON response containing details of the current or next upcoming forecast period.
 
-## Setup
+## Prerequisites
 
-1.  **Create a virtual environment:**
+-   Python 3.7+
+-   Flask (`pip install Flask`)
+-   Requests (`pip install requests`)
+
+## Setup and Installation
+
+1.  **Clone the repository (if applicable) or ensure `weather_service.py` is in your project directory.**
+
+2.  **Install dependencies:**
+    Open your terminal and navigate to the project directory. It's recommended to use a virtual environment.
+
     ```bash
     python -m venv venv
-    ```
-2.  **Activate the virtual environment:**
-    *   On Windows:
-        ```bash
-        venv\Scripts\activate
-        ```
-    *   On macOS and Linux:
-        ```bash
-        source venv/bin/activate
-        ```
-3.  **Install dependencies:**
-    ```bash
-    pip install -r requirements.txt
+    source venv/bin/activate  # On Windows use `venv\Scripts\activate`
+    pip install Flask requests
     ```
 
-## Running Tests
+## Running the Service
 
-To run the API tests, use the following command:
+To start the Flask development server:
+
 ```bash
-pytest
+python weather_service.py
 ```
 
-## Continuous Integration with Jenkins
+The service will typically start on `http://127.0.0.1:5000/` (or `http://0.0.0.0:5000/` as configured in the script).
 
-This repository includes a `Jenkinsfile` to enable Continuous Integration (CI) using Jenkins.
-The pipeline defined in this file will automate the testing process.
+## API Documentation
 
-### Pipeline Stages
+### Endpoint: `/weather`
 
-The Jenkins pipeline consists of the following stages:
+-   **Method:** `GET`
+-   **Description:** Retrieves the weather forecast for a given latitude and longitude.
 
-1.  **Checkout**: Clones the source code from the repository.
-2.  **Setup Python Environment**:
-    *   Checks for Python 3.
-    *   Creates a Python virtual environment (named `.venv`).
-    *   Upgrades `pip` within the virtual environment.
-3.  **Install Dependencies**: Installs the project dependencies listed in `requirements.txt` using `pip`.
-4.  **Run Tests**: Executes the automated tests using `pytest`.
+#### Request Parameters (Query String)
 
-### Usage
+-   `lat` (float, required): The latitude for the desired forecast location.
+-   `lon` (float, required): The longitude for the desired forecast location.
 
-1.  **Configure Jenkins**:
-    *   Ensure your Jenkins instance has the necessary plugins installed (e.g., Pipeline, Git).
-    *   Create a new Jenkins job (e.g., "Pipeline" or "Multibranch Pipeline").
-    *   Configure the job to use "Pipeline script from SCM".
-    *   Point the SCM to this repository.
-    *   The "Script Path" should be `Jenkinsfile` (which is the default).
-2.  **Run the Pipeline**: Trigger the Jenkins job manually or configure it to run on SCM changes (e.g., new commits).
+**Example Request:**
+`GET /weather?lat=39.7456&lon=-97.0892`
 
-The pipeline will then execute the defined stages, providing feedback on the build and test results.
+#### Success Response (200 OK)
 
-## Adding New Tests
+The service returns a JSON object with the following structure:
 
-1.  Open the `tests/test_api.py` file.
-2.  Add new test functions using the `pytest` conventions.
-3.  You can use the `requests` library to make API calls and assert the responses.
-
-### Parameterized Testing (Data-Driven Tests)
-
-For testing multiple scenarios with the same test logic but different data, you can use `pytest.mark.parametrize`. This allows you to define a set of input data and expected outcomes, and `pytest` will generate a test case for each combination.
-
-**Example:**
-
-To test different todo IDs and their expected status codes:
-
-```python
-import pytest
-import requests
-
-BASE_URL = "https://jsonplaceholder.typicode.com" # Or your API's base URL
-
-# Define test data: list of tuples (input_value, expected_output)
-status_code_test_data = [
-    (1, 200),  # (todo_id, expected_status_code)
-    (2, 200),
-    (0, 404),  # Example: an invalid ID
-    (99999, 404) # Example: a non-existent ID
-]
-
-@pytest.mark.parametrize("todo_id, expected_status_code", status_code_test_data)
-def test_get_todo_status_code(todo_id, expected_status_code):
-    response = requests.get(f"{BASE_URL}/todos/{todo_id}")
-    assert response.status_code == expected_status_code
+```json
+{
+  "requested_latitude": 39.7456,
+  "requested_longitude": -97.0892,
+  "forecast_office": "TOP",
+  "forecast_generated_at": "YYYY-MM-DDTHH:MM:SS.ffffffZ",
+  "current_forecast": {
+    "period_name": "Tonight",
+    "start_time": "YYYY-MM-DDTHH:MM:SSZ",
+    "end_time": "YYYY-MM-DDTHH:MM:SSZ",
+    "is_daytime": false,
+    "temperature": 55,
+    "temperature_unit": "F",
+    "wind_speed": "5 to 10 mph",
+    "wind_direction": "S",
+    "icon": "https://api.weather.gov/icons/land/night/sct?size=medium",
+    "short_forecast": "Mostly Clear",
+    "detailed_forecast": "Mostly clear, with a low around 55. South wind 5 to 10 mph."
+  }
+}
 ```
 
-In this example:
-- `status_code_test_data` holds the different sets of `todo_id` and `expected_status_code`.
-- The `@pytest.mark.parametrize("todo_id, expected_status_code", status_code_test_data)` decorator tells pytest to run `test_get_todo_status_code` multiple times, once for each tuple in `status_code_test_data`.
-- In each run, `todo_id` and `expected_status_code` will be assigned the values from the current tuple.
+#### Error Responses
 
-You can use a similar approach to parameterize other aspects of your tests, such as request payloads or parts of the expected response body.
+-   **400 Bad Request:** If `lat` or `lon` parameters are missing or invalid.
+    ```json
+    {
+      "error": "Missing or invalid 'lat' or 'lon' query parameters."
+    }
+    ```
+-   **500 Internal Server Error:** If there's an issue fetching data from `api.weather.gov` or an unexpected server error occurs.
+    ```json
+    {
+      "error": "Failed to process request",
+      "details": "Specific error message from the server or external API."
+    }
+    ```
+-   **502 Bad Gateway:** If `api.weather.gov` returns an error.
+    ```json
+    {
+      "error": "Bad Gateway to api.weather.gov",
+      "details": "Received status X from api.weather.gov/points or /forecast"
+    }
+    ```
+-   **504 Gateway Timeout:** If a request to `api.weather.gov` times out.
+    ```json
+    {
+      "error": "Gateway Timeout",
+      "details": "Request to api.weather.gov timed out."
+    }
+    ```
+
+## Development Notes
+
+-   The service uses a `User-Agent` string `(myweatherapp.com, contact@myweatherapp.com)` for requests to `api.weather.gov` as per their API guidelines.
+-   Error handling is included for common issues like missing parameters, external API failures, and parsing problems.
+```
